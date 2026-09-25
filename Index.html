@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Amjad Rashid Alhousni">
+<meta name="description" content="Route opportunity analysis for an electric coach linking St Andrews, Cupar, Edinburgh Airport and Edinburgh.">
+<title>St Andrews Express</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+  :root {
+    --paper: #F5F7F6;
+    --panel: #FFFFFF;
+    --ink: #16201D;
+    --muted: #56635F;
+    --rule: #D4DBD8;
+    --route: #2451A6;
+    --route-soft: #DCE5F6;
+    --peak: #C9820E;
+    --peak-soft: #F6E6C8;
+    --steady: #E7ECEA;
+    --s-x59: #2451A6;
+    --s-787: #C9820E;
+    --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+    --body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #0F1513;
+      --panel: #161E1B;
+      --ink: #E6ECE9;
+      --muted: #9CA9A4;
+      --rule: #2B3531;
+      --route: #86A8EC;
+      --route-soft: #1C2A45;
+      --peak: #E7A642;
+      --peak-soft: #3A2C12;
+      --steady: #202A27;
+      --s-x59: #5B84D6;
+      --s-787: #C98500;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0F1513;
+    --panel: #161E1B;
+    --ink: #E6ECE9;
+    --muted: #9CA9A4;
+    --rule: #2B3531;
+    --route: #86A8EC;
+    --route-soft: #1C2A45;
+    --peak: #E7A642;
+    --peak-soft: #3A2C12;
+    --steady: #202A27;
+    --s-x59: #5B84D6;
+    --s-787: #C98500;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    padding-inline: 20px;
+    padding-block: 40px 64px;
+  }
+  .page { max-width: 780px; margin: 0 auto; display: grid; gap: 44px; }
+  h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.05; }
+  h1 { font-size: clamp(44px, 9vw, 68px); font-weight: 700; letter-spacing: 0.005em; }
+  h2 { font-size: 30px; font-weight: 600; }
+  h3 { font-size: 21px; font-weight: 600; }
+  p { margin: 0; max-width: 66ch; }
+  a { color: var(--route); text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; border-radius: 2px; }
+  .label {
+    font-family: var(--display); font-weight: 600; font-size: 14px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  section { display: grid; gap: 16px; }
+
+  /* Header */
+  header { display: grid; gap: 14px; }
+  .lede { font-size: 19px; color: var(--ink); max-width: 60ch; }
+  .byline { font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .byline strong { color: var(--ink); font-weight: 600; }
+
+  /* Strip map */
+  .strip { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+  .strip svg { display: block; width: 100%; min-width: 600px; height: auto; }
+  .strip .note { padding: 0 20px 16px; font-size: 13.5px; color: var(--muted); }
+
+  /* Facts */
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+  .fact { background: var(--panel); padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+  .fact .big { font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1; }
+  .fact span:last-child { font-size: 14px; color: var(--muted); line-height: 1.45; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--rule); }
+  tr:last-child td { border-bottom: 0; }
+  th { font-family: var(--display); font-weight: 600; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); background: var(--paper); }
+  td.opt { font-weight: 600; }
+  tr.gap td { background: var(--route-soft); }
+  .tag { display: inline-block; margin-top: 8px; padding: 2px 8px; border: 1px solid var(--route); border-radius: 3px; font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--route); white-space: nowrap; }
+  .callout { border-left: 3px solid var(--route); padding: 4px 0 4px 16px; font-size: 17px; }
+
+  /* Calendar */
+  .cal { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; }
+  .m { display: grid; gap: 6px; justify-items: center; }
+  .m .bar { width: 100%; height: 44px; border-radius: 3px; background: var(--steady); border: 1px solid var(--rule); }
+  .m .bar.peak { background: var(--peak-soft); border-color: var(--peak); }
+  .m .bar.top { background: var(--peak); border-color: var(--peak); }
+  .m .bar.quiet { background: transparent; border-style: dashed; }
+  .m b { font-family: var(--mono); font-weight: 500; font-size: 12px; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13.5px; color: var(--muted); }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 2px; vertical-align: -2px; margin-right: 6px; border: 1px solid var(--rule); background: var(--steady); }
+  .legend i.peak { background: var(--peak-soft); border-color: var(--peak); }
+  .legend i.top { background: var(--peak); border-color: var(--peak); }
+  .legend i.quiet { background: transparent; border-style: dashed; }
+  .cal-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 24px; font-size: 14.5px; }
+  .cal-notes div { display: grid; gap: 2px; }
+  .cal-notes .when { font-family: var(--mono); font-size: 12.5px; color: var(--peak); font-weight: 500; letter-spacing: 0.02em; }
+
+  /* Ideas */
+  .ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .idea { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; align-content: start; }
+  .idea .place { font-family: var(--mono); font-size: 12.5px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+  .idea p { font-size: 15px; }
+  .idea .adapt { border-top: 1px solid var(--rule); padding-top: 10px; }
+  .idea .adapt strong { font-weight: 600; }
+
+  /* Steps */
+  ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: s; }
+  ol.steps li { counter-increment: s; display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--rule); }
+  ol.steps li:last-child { border-bottom: 1px solid var(--rule); }
+  ol.steps li::before { content: counter(s); font-family: var(--display); font-weight: 700; font-size: 26px; line-height: 1; color: var(--route); }
+  ol.steps strong { font-weight: 600; }
+
+  /* Sources */
+  .sources { font-size: 13.5px; color: var(--muted); display: grid; gap: 10px; }
+  .sources ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+  footer { font-size: 13.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; }
+
+  /* Running time chart */
+  .chart { position: relative; margin: 0; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart svg.narrow { display: none; }
+  @media (max-width: 520px) { .chart svg.wide { display: none; } .chart svg.narrow { display: block; } figure.chart div.tip { white-space: normal; width: 220px; } }
+  .chart .grid { stroke: var(--rule); stroke-width: 1; }
+  .chart .axis { font-family: var(--mono); font-size: 11.5px; fill: var(--muted); }
+  .chart .lab { font-family: var(--body); font-size: 13px; font-weight: 600; fill: var(--ink); }
+  .chart .val { font-family: var(--mono); font-size: 12px; fill: var(--ink); }
+  .chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .ln.s-x59 { stroke: var(--s-x59); }
+  .chart .ln.s-787 { stroke: var(--s-787); }
+  .chart .dot { stroke: var(--panel); stroke-width: 2; }
+  .chart .dot.s-x59 { fill: var(--s-x59); }
+  .chart .dot.s-787 { fill: var(--s-787); }
+  .chart .hit { fill: transparent; cursor: default; }
+  .chart .xhair { stroke: var(--muted); stroke-width: 1; opacity: 0; pointer-events: none; }
+  .chart .tip { position: absolute; top: 0; left: 0; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 13px; line-height: 1.35; padding: 6px 9px; border-radius: 4px; white-space: nowrap; opacity: 0; transition: opacity 0.1s; }
+  .chart .tip.on { opacity: 1; }
+  .legend i.key { width: 18px; height: 4px; border: 0; border-radius: 2px; vertical-align: middle; }
+  .legend i.k-x59 { background: var(--s-x59); }
+  .legend i.k-787 { background: var(--s-787); }
+  .note { font-size: 13.5px; color: var(--muted); }
+  details.data summary { cursor: pointer; font-size: 14px; color: var(--route); }
+  details.data[open] summary { margin-bottom: 10px; }
+  table.compact { min-width: 0; }
+  sup.src { font-family: var(--mono); font-size: 0.68em; line-height: 0; margin-left: 2px; }
+  sup.src a { text-decoration: none; }
+  .sources li:target { color: var(--ink); }
+
+  @media (max-width: 520px) {
+    body { padding-block: 28px 48px; }
+    .cal { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 12px; }
+    h2 { font-size: 26px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .route-line { stroke-dasharray: 900; stroke-dashoffset: 0; animation: draw 1.2s ease-out both; }
+    @keyframes draw { from { stroke-dashoffset: 900; } to { stroke-dashoffset: 0; } }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header>
+    <span class="label">Route opportunity analysis</span>
+    <h1>St Andrews Express</h1>
+    <p class="lede">A proposed electric coach linking St Andrews, Cupar, Edinburgh Airport and Edinburgh, with a timetable that follows the university year and the golf season.</p>
+    <div class="byline">
+      <span>By <strong>Amjad Rashid Alhousni</strong></span>
+      <span>September 2026</span>
+      <span>Independent desk research from public sources. Not produced for or endorsed by Ember.</span>
+    </div>
+  </header>
+
+  <figure class="strip" aria-labelledby="strip-cap" style="margin:0">
+    <svg viewBox="0 0 760 190" role="img" aria-label="Proposed route: St Andrews, Guardbridge, Cupar, via the Queensferry Crossing, Edinburgh Airport, Edinburgh city centre">
+      <text x="30" y="34" fill="var(--muted)" font-family="IBM Plex Mono, monospace" font-size="12" letter-spacing="1">PROPOSED STOPPING PATTERN</text>
+      <line class="route-line" x1="88" y1="96" x2="700" y2="96" stroke="var(--route)" stroke-width="8" stroke-linecap="round"/>
+      <!-- stops -->
+      <g font-family="IBM Plex Sans, sans-serif" fill="var(--ink)">
+        <circle cx="88" cy="96" r="12" fill="var(--panel)" stroke="var(--route)" stroke-width="5"/>
+        <text x="88" y="136" text-anchor="middle" font-size="15" font-weight="600">St Andrews</text>
+        <text x="88" y="155" text-anchor="middle" font-size="12" fill="var(--muted)">University, Old Course</text>
+
+        <circle cx="200" cy="96" r="8" fill="var(--panel)" stroke="var(--route)" stroke-width="4"/>
+        <text x="200" y="136" text-anchor="middle" font-size="15" font-weight="600">Guardbridge</text>
+
+        <circle cx="305" cy="96" r="8" fill="var(--panel)" stroke="var(--route)" stroke-width="4"/>
+        <text x="305" y="136" text-anchor="middle" font-size="15" font-weight="600">Cupar</text>
+        <text x="305" y="155" text-anchor="middle" font-size="12" fill="var(--muted)">County town</text>
+
+        <rect x="429" y="87" width="18" height="18" transform="rotate(45 438 96)" fill="var(--paper)" stroke="var(--muted)" stroke-width="2"/>
+        <text x="438" y="66" text-anchor="middle" font-size="12" fill="var(--muted)">via Queensferry Crossing</text>
+
+        <circle cx="580" cy="96" r="12" fill="var(--panel)" stroke="var(--route)" stroke-width="5"/>
+        <text x="580" y="136" text-anchor="middle" font-size="15" font-weight="600">Edinburgh Airport</text>
+        <text x="580" y="155" text-anchor="middle" font-size="12" fill="var(--muted)">Timed to arrival waves</text>
+
+        <circle cx="700" cy="96" r="12" fill="var(--panel)" stroke="var(--route)" stroke-width="5"/>
+        <text x="700" y="136" text-anchor="middle" font-size="15" font-weight="600">Edinburgh</text>
+        <text x="700" y="155" text-anchor="middle" font-size="12" fill="var(--muted)">City centre</text>
+      </g>
+    </svg>
+    <figcaption class="note" id="strip-cap">Proposed stops. Running times, charging and the depot would be confirmed against Ember's fleet plan.</figcaption>
+  </figure>
+
+  <section aria-labelledby="why">
+    <h2 id="why">Why St Andrews</h2>
+    <div class="facts">
+      <div class="fact"><span class="big num">10,356</span><span>students at the University of St Andrews in 2024/25<sup class="src"><a href="#s1" aria-label="Source 1">1</a></sup></span></div>
+      <div class="fact"><span class="big num">120+</span><span>countries represented in the 2024/25 student body<sup class="src"><a href="#s1" aria-label="Source 1">1</a></sup></span></div>
+      <div class="fact"><span class="big num">290,000</span><span>record crowd The R&amp;A planned for the 2022 Open.<sup class="src"><a href="#s2" aria-label="Source 2">2</a></sup> The 155th Open runs 11 to 18 July 2027, with no public parking in St Andrews<sup class="src"><a href="#s3" aria-label="Source 3">3</a></sup></span></div>
+      <div class="fact"><span class="big num">0</span><span>railway stations in St Andrews. The nearest is Leuchars<sup class="src"><a href="#s3" aria-label="Source 3">3</a></sup></span></div>
+    </div>
+    <p>Ember's website lists routes between Dundee, Aberdeen, Edinburgh, Glasgow, Oban, Fort William and Inverness, with no St Andrews service.<sup class="src"><a href="#s7" aria-label="Source 7">7</a></sup> Ember is recruiting drivers for a new Kirkcaldy hub in Fife, which would give a route like this a base.<sup class="src"><a href="#s8" aria-label="Source 8">8</a></sup></p>
+  </section>
+
+  <section aria-labelledby="today">
+    <h2 id="today">How people make this trip today</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Option</th><th scope="col">Journey time</th><th scope="col">How often</th><th scope="col">What gets in the way</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="opt">Train, then bus<br><span style="font-weight:400;color:var(--muted)">Edinburgh to Leuchars, bus to St Andrews</span></td>
+            <td class="num">54 to 86 min by train, plus the bus<sup class="src"><a href="#s4" aria-label="Source 4">4</a></sup></td>
+            <td>about 30 trains a weekday, usually 1 or 2 an hour</td>
+            <td>A change at Leuchars, awkward with luggage</td>
+          </tr>
+          <tr>
+            <td class="opt">X59 bus<br><span style="font-weight:400;color:var(--muted)">Edinburgh Bus Station to St Andrews</span></td>
+            <td class="num">1 hr 58 to 2 hrs 19<sup class="src"><a href="#s6" aria-label="Source 6">6</a></sup></td>
+            <td>13 direct journeys a weekday, about hourly in the daytime</td>
+            <td>Runs via Halbeath and Glenrothes, and the last four evening trips need a change at Glenrothes</td>
+          </tr>
+          <tr class="gap">
+            <td class="opt">JET 787 bus<br><span style="font-weight:400;color:var(--muted)">Edinburgh Airport to St Andrews</span><br><span class="tag">The weak spot</span></td>
+            <td class="num">1 hr 26 to 1 hr 42<sup class="src"><a href="#s5" aria-label="Source 5">5</a></sup></td>
+            <td>12 journeys a weekday, about every 2 hours in the daytime</td>
+            <td>Runs via Kinross and Auchtermuchty</td>
+          </tr>
+          <tr>
+            <td class="opt">Tram, train, then shuttle<br><span style="font-weight:400;color:var(--muted)">The R&amp;A's advice from Edinburgh Airport for Open week</span></td>
+            <td class="num">49 to 82 min by train from Haymarket, plus the tram and shuttle<sup class="src"><a href="#s4" aria-label="Source 4">4</a></sup></td>
+            <td>shuttle up to every 5 minutes at peak<sup class="src"><a href="#s3" aria-label="Source 3">3</a></sup></td>
+            <td>Two changes: tram to Haymarket, train to Leuchars, shuttle to the course</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="callout">From the city centre, the direct bus takes about two hours by way of Glenrothes. The airport link is weaker still: the direct bus runs about every two hours by way of Kinross, and the official advice for Open week from the airport needs a tram, a train and a shuttle.</p>
+  </section>
+
+  <section aria-labelledby="runtimes">
+    <h2 id="runtimes">Traffic already shapes running times</h2>
+    <p>Both direct buses are given more time for the same journey at the evening peak. A probabilistic timetable would plan for this from the start, hour by hour and stop by stop.</p>
+    <div class="legend" aria-hidden="true"><span><i class="key k-x59"></i>X59 from Edinburgh Bus Station</span><span><i class="key k-787"></i>JET 787 from Edinburgh Airport</span></div>
+    <figure class="chart" id="rt-chart">
+        <svg class="wide" viewBox="0 0 720 300" role="img" aria-labelledby="rt-title-wide rt-desc-wide">
+        <title id="rt-title-wide">Scheduled running time to St Andrews by departure time</title>
+        <desc id="rt-desc-wide">X59 from Edinburgh Bus Station is timed at 2 hrs for most of the day and 2 hrs 18 for the 15:55 and 16:55 departures. JET 787 from Edinburgh Airport is timed at about 1 hr 27 for most of the day and 1 hr 42 for the 16:45 departure.</desc>
+        <line x1="56" y1="250.0" x2="700" y2="250.0" class="grid"/>
+        <text x="48" y="254.0" text-anchor="end" class="axis">80</text>
+        <line x1="56" y1="180.0" x2="700" y2="180.0" class="grid"/>
+        <text x="48" y="184.0" text-anchor="end" class="axis">100</text>
+        <line x1="56" y1="110.0" x2="700" y2="110.0" class="grid"/>
+        <text x="48" y="114.0" text-anchor="end" class="axis">120</text>
+        <line x1="56" y1="40.0" x2="700" y2="40.0" class="grid"/>
+        <text x="48" y="44.0" text-anchor="end" class="axis">140</text>
+        <text x="48" y="24" text-anchor="end" class="axis">min</text>
+        <text x="56.0" y="272" text-anchor="middle" class="axis">00:00</text>
+        <text x="163.3" y="272" text-anchor="middle" class="axis">04:00</text>
+        <text x="270.7" y="272" text-anchor="middle" class="axis">08:00</text>
+        <text x="378.0" y="272" text-anchor="middle" class="axis">12:00</text>
+        <text x="485.3" y="272" text-anchor="middle" class="axis">16:00</text>
+        <text x="592.7" y="272" text-anchor="middle" class="axis">20:00</text>
+        <text x="700.0" y="272" text-anchor="middle" class="axis">24:00</text>
+        <path d="M243.8,110.0 L268.4,110.0 L290.8,110.0 L322.1,110.0 L348.9,110.0 L375.8,110.0 L402.6,110.0 L429.4,110.0 L456.3,110.0 L483.1,47.0 L509.9,47.0 L545.7,113.5 L572.5,117.0" class="ln s-x59"/>
+        <circle cx="243.8" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="268.4" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="290.8" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="322.1" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="348.9" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="375.8" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="402.6" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="429.4" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="456.3" cy="110.0" r="4.5" class="dot s-x59"/>
+        <circle cx="483.1" cy="47.0" r="4.5" class="dot s-x59"/>
+        <circle cx="509.9" cy="47.0" r="4.5" class="dot s-x59"/>
+        <circle cx="545.7" cy="113.5" r="4.5" class="dot s-x59"/>
+        <circle cx="572.5" cy="117.0" r="4.5" class="dot s-x59"/>
+        <circle cx="243.8" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 07:00 · arrives 09:00 · 2 hrs"/>
+        <circle cx="268.4" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 07:55 · arrives 09:55 · 2 hrs"/>
+        <circle cx="290.8" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 08:45 · arrives 10:45 · 2 hrs"/>
+        <circle cx="322.1" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 09:55 · arrives 11:55 · 2 hrs"/>
+        <circle cx="348.9" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 10:55 · arrives 12:55 · 2 hrs"/>
+        <circle cx="375.8" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 11:55 · arrives 13:55 · 2 hrs"/>
+        <circle cx="402.6" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 12:55 · arrives 14:55 · 2 hrs"/>
+        <circle cx="429.4" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 13:55 · arrives 15:55 · 2 hrs"/>
+        <circle cx="456.3" cy="110.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 14:55 · arrives 16:55 · 2 hrs"/>
+        <circle cx="483.1" cy="47.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 15:55 · arrives 18:13 · 2 hrs 18"/>
+        <circle cx="509.9" cy="47.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 16:55 · arrives 19:13 · 2 hrs 18"/>
+        <circle cx="545.7" cy="113.5" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 18:15 · arrives 20:14 · 1 hr 59"/>
+        <circle cx="572.5" cy="117.0" r="13" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 19:15 · arrives 21:13 · 1 hr 58"/>
+        <path d="M91.8,229.0 L132.0,208.0 L190.2,225.5 L239.4,225.5 L297.5,225.5 L344.5,225.5 L398.1,225.5 L451.8,225.5 L505.5,173.0 L568.1,229.0 L621.7,229.0 L675.4,229.0" class="ln s-787"/>
+        <circle cx="91.8" cy="229.0" r="4.5" class="dot s-787"/>
+        <circle cx="132.0" cy="208.0" r="4.5" class="dot s-787"/>
+        <circle cx="190.2" cy="225.5" r="4.5" class="dot s-787"/>
+        <circle cx="239.4" cy="225.5" r="4.5" class="dot s-787"/>
+        <circle cx="297.5" cy="225.5" r="4.5" class="dot s-787"/>
+        <circle cx="344.5" cy="225.5" r="4.5" class="dot s-787"/>
+        <circle cx="398.1" cy="225.5" r="4.5" class="dot s-787"/>
+        <circle cx="451.8" cy="225.5" r="4.5" class="dot s-787"/>
+        <circle cx="505.5" cy="173.0" r="4.5" class="dot s-787"/>
+        <circle cx="568.1" cy="229.0" r="4.5" class="dot s-787"/>
+        <circle cx="621.7" cy="229.0" r="4.5" class="dot s-787"/>
+        <circle cx="675.4" cy="229.0" r="4.5" class="dot s-787"/>
+        <circle cx="91.8" cy="229.0" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 01:20 · arrives 02:46 · 1 hr 26"/>
+        <circle cx="132.0" cy="208.0" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 02:50 · arrives 04:22 · 1 hr 32"/>
+        <circle cx="190.2" cy="225.5" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 05:00 · arrives 06:27 · 1 hr 27"/>
+        <circle cx="239.4" cy="225.5" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 06:50 · arrives 08:17 · 1 hr 27"/>
+        <circle cx="297.5" cy="225.5" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 09:00 · arrives 10:27 · 1 hr 27"/>
+        <circle cx="344.5" cy="225.5" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 10:45 · arrives 12:12 · 1 hr 27"/>
+        <circle cx="398.1" cy="225.5" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 12:45 · arrives 14:12 · 1 hr 27"/>
+        <circle cx="451.8" cy="225.5" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 14:45 · arrives 16:12 · 1 hr 27"/>
+        <circle cx="505.5" cy="173.0" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 16:45 · arrives 18:27 · 1 hr 42"/>
+        <circle cx="568.1" cy="229.0" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 19:05 · arrives 20:31 · 1 hr 26"/>
+        <circle cx="621.7" cy="229.0" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 21:05 · arrives 22:31 · 1 hr 26"/>
+        <circle cx="675.4" cy="229.0" r="13" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 23:05 · arrives 00:31 · 1 hr 26"/>
+        <text x="322.1" y="96.0" class="lab">X59 from Edinburgh Bus Station</text>
+        <text x="239.4" y="211.5" class="lab">JET 787 from Edinburgh Airport</text>
+        <text x="496.5" y="35.0" text-anchor="middle" class="val">2 hrs 18</text>
+        <text x="517.5" y="177.0" class="val">1 hr 42</text>
+        <line class="xhair" x1="0" y1="40" x2="0" y2="250"/>
+        </svg>
+        <svg class="narrow" viewBox="0 0 360 300" role="img" aria-labelledby="rt-title-narrow rt-desc-narrow">
+        <title id="rt-title-narrow">Scheduled running time to St Andrews by departure time</title>
+        <desc id="rt-desc-narrow">X59 from Edinburgh Bus Station is timed at 2 hrs for most of the day and 2 hrs 18 for the 15:55 and 16:55 departures. JET 787 from Edinburgh Airport is timed at about 1 hr 27 for most of the day and 1 hr 42 for the 16:45 departure.</desc>
+        <line x1="40" y1="250.0" x2="336" y2="250.0" class="grid"/>
+        <text x="32" y="254.0" text-anchor="end" class="axis">80</text>
+        <line x1="40" y1="180.0" x2="336" y2="180.0" class="grid"/>
+        <text x="32" y="184.0" text-anchor="end" class="axis">100</text>
+        <line x1="40" y1="110.0" x2="336" y2="110.0" class="grid"/>
+        <text x="32" y="114.0" text-anchor="end" class="axis">120</text>
+        <line x1="40" y1="40.0" x2="336" y2="40.0" class="grid"/>
+        <text x="32" y="44.0" text-anchor="end" class="axis">140</text>
+        <text x="32" y="24" text-anchor="end" class="axis">min</text>
+        <text x="40.0" y="272" text-anchor="middle" class="axis">00:00</text>
+        <text x="114.0" y="272" text-anchor="middle" class="axis">06:00</text>
+        <text x="188.0" y="272" text-anchor="middle" class="axis">12:00</text>
+        <text x="262.0" y="272" text-anchor="middle" class="axis">18:00</text>
+        <text x="336.0" y="272" text-anchor="middle" class="axis">24:00</text>
+        <path d="M126.3,110.0 L137.6,110.0 L147.9,110.0 L162.3,110.0 L174.6,110.0 L187.0,110.0 L199.3,110.0 L211.6,110.0 L224.0,110.0 L236.3,47.0 L248.6,47.0 L265.1,113.5 L277.4,117.0" class="ln s-x59"/>
+        <circle cx="126.3" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="137.6" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="147.9" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="162.3" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="174.6" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="187.0" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="199.3" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="211.6" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="224.0" cy="110.0" r="4" class="dot s-x59"/>
+        <circle cx="236.3" cy="47.0" r="4" class="dot s-x59"/>
+        <circle cx="248.6" cy="47.0" r="4" class="dot s-x59"/>
+        <circle cx="265.1" cy="113.5" r="4" class="dot s-x59"/>
+        <circle cx="277.4" cy="117.0" r="4" class="dot s-x59"/>
+        <circle cx="126.3" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 07:00 · arrives 09:00 · 2 hrs"/>
+        <circle cx="137.6" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 07:55 · arrives 09:55 · 2 hrs"/>
+        <circle cx="147.9" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 08:45 · arrives 10:45 · 2 hrs"/>
+        <circle cx="162.3" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 09:55 · arrives 11:55 · 2 hrs"/>
+        <circle cx="174.6" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 10:55 · arrives 12:55 · 2 hrs"/>
+        <circle cx="187.0" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 11:55 · arrives 13:55 · 2 hrs"/>
+        <circle cx="199.3" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 12:55 · arrives 14:55 · 2 hrs"/>
+        <circle cx="211.6" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 13:55 · arrives 15:55 · 2 hrs"/>
+        <circle cx="224.0" cy="110.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 14:55 · arrives 16:55 · 2 hrs"/>
+        <circle cx="236.3" cy="47.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 15:55 · arrives 18:13 · 2 hrs 18"/>
+        <circle cx="248.6" cy="47.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 16:55 · arrives 19:13 · 2 hrs 18"/>
+        <circle cx="265.1" cy="113.5" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 18:15 · arrives 20:14 · 1 hr 59"/>
+        <circle cx="277.4" cy="117.0" r="9" class="hit" data-tip="X59 · leaves Edinburgh Bus Station 19:15 · arrives 21:13 · 1 hr 58"/>
+        <path d="M56.4,229.0 L74.9,208.0 L101.7,225.5 L124.3,225.5 L151.0,225.5 L172.6,225.5 L197.2,225.5 L221.9,225.5 L246.6,173.0 L275.4,229.0 L300.0,229.0 L324.7,229.0" class="ln s-787"/>
+        <circle cx="56.4" cy="229.0" r="4" class="dot s-787"/>
+        <circle cx="74.9" cy="208.0" r="4" class="dot s-787"/>
+        <circle cx="101.7" cy="225.5" r="4" class="dot s-787"/>
+        <circle cx="124.3" cy="225.5" r="4" class="dot s-787"/>
+        <circle cx="151.0" cy="225.5" r="4" class="dot s-787"/>
+        <circle cx="172.6" cy="225.5" r="4" class="dot s-787"/>
+        <circle cx="197.2" cy="225.5" r="4" class="dot s-787"/>
+        <circle cx="221.9" cy="225.5" r="4" class="dot s-787"/>
+        <circle cx="246.6" cy="173.0" r="4" class="dot s-787"/>
+        <circle cx="275.4" cy="229.0" r="4" class="dot s-787"/>
+        <circle cx="300.0" cy="229.0" r="4" class="dot s-787"/>
+        <circle cx="324.7" cy="229.0" r="4" class="dot s-787"/>
+        <circle cx="56.4" cy="229.0" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 01:20 · arrives 02:46 · 1 hr 26"/>
+        <circle cx="74.9" cy="208.0" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 02:50 · arrives 04:22 · 1 hr 32"/>
+        <circle cx="101.7" cy="225.5" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 05:00 · arrives 06:27 · 1 hr 27"/>
+        <circle cx="124.3" cy="225.5" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 06:50 · arrives 08:17 · 1 hr 27"/>
+        <circle cx="151.0" cy="225.5" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 09:00 · arrives 10:27 · 1 hr 27"/>
+        <circle cx="172.6" cy="225.5" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 10:45 · arrives 12:12 · 1 hr 27"/>
+        <circle cx="197.2" cy="225.5" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 12:45 · arrives 14:12 · 1 hr 27"/>
+        <circle cx="221.9" cy="225.5" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 14:45 · arrives 16:12 · 1 hr 27"/>
+        <circle cx="246.6" cy="173.0" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 16:45 · arrives 18:27 · 1 hr 42"/>
+        <circle cx="275.4" cy="229.0" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 19:05 · arrives 20:31 · 1 hr 26"/>
+        <circle cx="300.0" cy="229.0" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 21:05 · arrives 22:31 · 1 hr 26"/>
+        <circle cx="324.7" cy="229.0" r="9" class="hit" data-tip="JET 787 · leaves Edinburgh Airport 23:05 · arrives 00:31 · 1 hr 26"/>
+        <text x="126.3" y="96.0" class="lab">X59</text>
+        <text x="124.3" y="211.5" class="lab">JET 787</text>
+        <text x="242.5" y="35.0" text-anchor="middle" class="val">2 hrs 18</text>
+        <text x="255.6" y="177.0" class="val">1 hr 42</text>
+        <line class="xhair" x1="0" y1="40" x2="0" y2="250"/>
+        </svg>
+      <div class="tip" role="status" aria-live="polite"></div>
+    </figure>
+    <p class="note">Scheduled weekday running times to St Andrews Bus Station, by departure time.<sup class="src"><a href="#s5" aria-label="Source 5">5</a>,<a href="#s6" aria-label="Source 6">6</a></sup> Towards Edinburgh the morning peak does the same: the 07:00 JET 787 from St Andrews is given 1 hr 45, against 1 hr 35 at midday.</p>
+    <details class="data">
+      <summary>Show the times as a table</summary>
+      <div class="table-wrap"><table class="compact">
+        <thead><tr><th scope="col">Service</th><th scope="col">Leaves</th><th scope="col">Arrives</th><th scope="col">Running time</th></tr></thead>
+        <tbody><tr><td>X59</td><td class="num">07:00</td><td class="num">09:00</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">07:55</td><td class="num">09:55</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">08:45</td><td class="num">10:45</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">09:55</td><td class="num">11:55</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">10:55</td><td class="num">12:55</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">11:55</td><td class="num">13:55</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">12:55</td><td class="num">14:55</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">13:55</td><td class="num">15:55</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">14:55</td><td class="num">16:55</td><td class="num">2 hrs</td></tr><tr><td>X59</td><td class="num">15:55</td><td class="num">18:13</td><td class="num">2 hrs 18</td></tr><tr><td>X59</td><td class="num">16:55</td><td class="num">19:13</td><td class="num">2 hrs 18</td></tr><tr><td>X59</td><td class="num">18:15</td><td class="num">20:14</td><td class="num">1 hr 59</td></tr><tr><td>X59</td><td class="num">19:15</td><td class="num">21:13</td><td class="num">1 hr 58</td></tr><tr><td>JET 787</td><td class="num">01:20</td><td class="num">02:46</td><td class="num">1 hr 26</td></tr><tr><td>JET 787</td><td class="num">02:50</td><td class="num">04:22</td><td class="num">1 hr 32</td></tr><tr><td>JET 787</td><td class="num">05:00</td><td class="num">06:27</td><td class="num">1 hr 27</td></tr><tr><td>JET 787</td><td class="num">06:50</td><td class="num">08:17</td><td class="num">1 hr 27</td></tr><tr><td>JET 787</td><td class="num">09:00</td><td class="num">10:27</td><td class="num">1 hr 27</td></tr><tr><td>JET 787</td><td class="num">10:45</td><td class="num">12:12</td><td class="num">1 hr 27</td></tr><tr><td>JET 787</td><td class="num">12:45</td><td class="num">14:12</td><td class="num">1 hr 27</td></tr><tr><td>JET 787</td><td class="num">14:45</td><td class="num">16:12</td><td class="num">1 hr 27</td></tr><tr><td>JET 787</td><td class="num">16:45</td><td class="num">18:27</td><td class="num">1 hr 42</td></tr><tr><td>JET 787</td><td class="num">19:05</td><td class="num">20:31</td><td class="num">1 hr 26</td></tr><tr><td>JET 787</td><td class="num">21:05</td><td class="num">22:31</td><td class="num">1 hr 26</td></tr><tr><td>JET 787</td><td class="num">23:05</td><td class="num">00:31</td><td class="num">1 hr 26</td></tr></tbody>
+      </table></div>
+    </details>
+  </section>
+
+  <section aria-labelledby="season">
+    <h2 id="season">A timetable that follows the calendar</h2>
+    <p>Ember builds probabilistic timetables that change with how each stop is used across days, weeks and seasons. This corridor swings more than most, so the timetable should too. The pattern below is my expectation, to be checked against booking and occupancy data.</p>
+    <div class="cal" role="img" aria-label="Expected demand by month: peaks in September, December, February, May, June and July; steady in term; quieter in March and April outside exam and holiday dates, and in August outside golf">
+      <div class="m"><div class="bar quiet"></div><b>Jan</b></div>
+      <div class="m"><div class="bar peak"></div><b>Feb</b></div>
+      <div class="m"><div class="bar"></div><b>Mar</b></div>
+      <div class="m"><div class="bar"></div><b>Apr</b></div>
+      <div class="m"><div class="bar peak"></div><b>May</b></div>
+      <div class="m"><div class="bar peak"></div><b>Jun</b></div>
+      <div class="m"><div class="bar top"></div><b>Jul</b></div>
+      <div class="m"><div class="bar"></div><b>Aug</b></div>
+      <div class="m"><div class="bar top"></div><b>Sep</b></div>
+      <div class="m"><div class="bar"></div><b>Oct</b></div>
+      <div class="m"><div class="bar"></div><b>Nov</b></div>
+      <div class="m"><div class="bar peak"></div><b>Dec</b></div>
+    </div>
+    <div class="legend"><span><i class="quiet"></i>Quieter</span><span><i></i>Steady term time</span><span><i class="peak"></i>Peak</span><span><i class="top"></i>Highest</span></div>
+    <div class="cal-notes">
+      <div><span class="when">SEP</span><span>Students arrive, many through Edinburgh Airport</span></div>
+      <div><span class="when">DEC · FEB</span><span>Students leave at the end of the first semester, then return for the second</span></div>
+      <div><span class="when">MAY · JUN</span><span>Exams end, then graduation week visitors</span></div>
+      <div><span class="when">JUL 2027</span><span>The 155th Open, 11 to 18 July, on top of summer golf<sup class="src"><a href="#s3" aria-label="Source 3">3</a></sup></span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="fleet">
+    <h2 id="fleet">How many coaches it would take</h2>
+    <p>A first estimate, using today's scheduled running times as a guide. Each assumption is labelled so it can be swapped for Ember's own data.</p>
+    <div class="facts">
+      <div class="fact"><span class="big num">2 hrs</span><span>each way, St Andrews to Edinburgh via the airport. Assumed, in line with the X59 off peak<sup class="src"><a href="#s6" aria-label="Source 6">6</a></sup></span></div>
+      <div class="fact"><span class="big num">30 min</span><span>at each end for turnaround and a top up charge. Assumed</span></div>
+      <div class="fact"><span class="big num">5 hrs</span><span>for one round trip: 2 hrs and 30 min, twice</span></div>
+    </div>
+    <p><strong>Coaches needed</strong> = round trip time ÷ time between departures, rounded up.</p>
+    <div class="table-wrap"><table class="compact">
+      <thead><tr><th scope="col">Departures</th><th scope="col">Off peak</th><th scope="col">Evening peak</th></tr></thead>
+      <tbody>
+        <tr><td class="opt">Every 2 hours</td><td class="num">3</td><td class="num">3</td></tr>
+        <tr class="gap"><td class="opt">Every hour</td><td class="num">5</td><td class="num">6</td></tr>
+        <tr><td class="opt">Every 30 minutes</td><td class="num">10</td><td class="num">12</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Round trip of 5 hrs off peak, and 5 hrs 36 at the evening peak, when the X59 is given 2 hrs 18 each way. Figures are before spare coaches.</p>
+    <p class="callout">The 18 extra minutes each way that the X59 is given at the evening peak turn 5 coaches into 6 for an hourly service. Spare coaches for maintenance, and whether a coach needs a midday charge, would come from Ember's fleet data.</p>
+  </section>
+
+  <section aria-labelledby="abroad">
+    <h2 id="abroad">Ideas from places I have travelled</h2>
+    <div class="ideas">
+      <article class="idea">
+        <span class="place">Spain</span>
+        <h3>Go straight from the airport</h3>
+        <p>ALSA runs direct coaches from Madrid Barajas Airport Terminal 4 to cities such as Salamanca, a university city, without going into Madrid first.<sup class="src"><a href="#s9" aria-label="Source 9">9</a></sup></p>
+        <p class="adapt"><strong>For St Andrews:</strong> serve Edinburgh Airport directly on every journey, so arriving students and golfers never have to travel into the city to go north.</p>
+      </article>
+      <article class="idea">
+        <span class="place">Dubrovnik, Croatia</span>
+        <h3>Time the coach to the flights</h3>
+        <p>The Dubrovnik airport shuttle leaves about 30 minutes after every flight arrival, and its timetable changes between the quieter months and peak summer.<sup class="src"><a href="#s10" aria-label="Source 10">10</a></sup></p>
+        <p class="adapt"><strong>For St Andrews:</strong> time airport departures after the busiest arrival waves, and publish separate timetables for term time, holidays and the golf season.</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="test">
+    <h2 id="test">How I would test it before launch</h2>
+    <ol class="steps">
+      <li><div><strong>Ride the corridor.</strong> Travel the JET 787, the X59 and the train to Leuchars in the first week of term and count passengers and luggage at each stop.</div></li>
+      <li><div><strong>Match the airport.</strong> Pull Edinburgh Airport's arrival times for September, January and July, and set departures around the busiest waves.</div></li>
+      <li><div><strong>Talk to the people who know.</strong> Speak to the university and the Students' Association about arrival days, and meet Fife Council officers before formal consultation.</div></li>
+      <li><div><strong>Check the fleet and charging.</strong> Test the coach estimate above against Ember's own running times, confirm how many coaches and drivers the Kirkcaldy hub can spare at each peak, and where coaches charge between shifts.</div></li>
+      <li><div><strong>Build and register.</strong> Model the timetable by season in a spreadsheet, test it against historical demand, then register it with the Traffic Commissioner.</div></li>
+    </ol>
+  </section>
+
+  <section class="sources" aria-labelledby="src">
+    <span class="label" id="src">Sources</span>
+    <p style="margin:0">All figures come from the official websites and timetables below.</p>
+    <ol>
+      <li id="s1"><a href="https://www.st-andrews.ac.uk/about/facts/" target="_blank" rel="noopener">University of St Andrews, facts and figures</a>, 2024/25</li>
+      <li id="s2"><a href="https://www.theopen.com/latest/record-attendance-150th-open-st-andrews" target="_blank" rel="noopener">The Open, record attendance at the 150th Open</a>, 26 April 2022</li>
+      <li id="s3"><a href="https://www.theopen.com/tickets-and-hospitality/getting-there" target="_blank" rel="noopener">The Open, getting to St Andrews for The 155th Open</a>, viewed September 2026</li>
+      <li id="s4"><a href="https://www.scotrail.co.uk/" target="_blank" rel="noopener">ScotRail, Edinburgh to Fife, Perth and Dundee timetable</a>, valid 28 September to 12 December 2026</li>
+      <li id="s5"><a href="https://tiscon-maps-stagecoachbus.s3.amazonaws.com/Timetables/East%20Scotland/Fife/ESCOT_Fife_Service_787_Timetable.pdf" target="_blank" rel="noopener">Stagecoach, service 787 timetable</a>, valid from 17 August 2026</li>
+      <li id="s6"><a href="https://www.stagecoachbus.com/" target="_blank" rel="noopener">Stagecoach, service X59 timetable</a>, valid from 24 November 2025</li>
+      <li id="s7"><a href="https://www.ember.to/" target="_blank" rel="noopener">Ember, routes on the official website</a>, viewed September 2026</li>
+      <li id="s8"><a href="https://ember.recruitee.com/o/intercity-bus-and-coach-driver-kirkcaldy" target="_blank" rel="noopener">Ember careers, Kirkcaldy driver roles</a>, viewed September 2026</li>
+      <li id="s9"><a href="https://www.alsa.com/en/airports/madrid-barajas-airport" target="_blank" rel="noopener">ALSA, coaches from Madrid Barajas Airport</a></li>
+      <li id="s10"><a href="https://platanus.hr/dubrovnik-airport-shuttle/" target="_blank" rel="noopener">Platanus, Dubrovnik airport shuttle</a></li>
+    </ol>
+  </section>
+
+  <footer>
+    I used frontier AI tools to speed up the research, then checked every figure myself against the official sources above. The demand pattern and airport timing are proposals to test, not measured results.
+  </footer>
+
+</main>
+<script>
+(function () {
+  var fig = document.getElementById('rt-chart');
+  if (!fig) return;
+  var tip = fig.querySelector('.tip');
+  var xh = null;
+  function show(e) {
+    var c = e.target;
+    tip.textContent = c.getAttribute('data-tip');
+    var cx = c.getAttribute('cx');
+    if (xh) xh.style.opacity = 0;
+    xh = c.ownerSVGElement.querySelector('.xhair');
+    xh.setAttribute('x1', cx); xh.setAttribute('x2', cx); xh.style.opacity = 0.6;
+    var fr = fig.getBoundingClientRect();
+    var cr = c.getBoundingClientRect();
+    var x = cr.left - fr.left + cr.width / 2;
+    var y = cr.top - fr.top - 8;
+    tip.classList.add('on');
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var maxX = fig.clientWidth - tw - 6;
+    var left = Math.max(6, Math.min(x - tw / 2, maxX));
+    var top = y - th < 4 ? y + cr.height + 12 : y - th;
+    tip.style.transform = 'translate(' + left + 'px,' + top + 'px)';
+  }
+  function hide() { tip.classList.remove('on'); if (xh) xh.style.opacity = 0; }
+  fig.querySelectorAll('.hit').forEach(function (c) {
+    c.addEventListener('pointerenter', show);
+    c.addEventListener('pointerdown', show);
+    c.addEventListener('pointerleave', hide);
+  });
+})();
+</script>
+</body>
+</html>
